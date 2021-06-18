@@ -80,7 +80,7 @@ def load_data(train_dir):
 def define_discriminator(in_shape=(256, 256, 4)):
     model = keras.Sequential()
     model.add(layers.Input(shape=in_shape))
-    model.add(CenterCrop(height=256, width=256))
+    # model.add(CenterCrop(height=256, width=256))
     model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
     model.add(layers.LeakyReLU(alpha=0.2))
     model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
@@ -91,7 +91,6 @@ def define_discriminator(in_shape=(256, 256, 4)):
     model.add(layers.LeakyReLU(alpha=0.2))
     model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
     model.add(layers.LeakyReLU(alpha=0.2))
-
 
     model.add(layers.Flatten())
     model.add(layers.Dropout(0.4))
@@ -199,7 +198,7 @@ if __name__ == "__main__":
     latent_dim = 100
     # create the discriminator
     discriminator = define_discriminator()
-    # print(discriminator.summary())
+    print(discriminator.summary())
     # create the generator
     # print("*******************************************")
     generator = define_generator(latent_dim)
@@ -208,8 +207,8 @@ if __name__ == "__main__":
     gan_model = define_gan(generator, discriminator)
 
     # load image data
-    dataset = load_data("dataset/floorplan")
+    # dataset = load_data("dataset/floorplan")
 
     print("*******************************************")
     # train model
-    train(generator, discriminator, gan_model, dataset, latent_dim, epochs=500)
+    # train(generator, discriminator, gan_model, dataset, latent_dim, epochs=500)
