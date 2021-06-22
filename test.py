@@ -102,6 +102,7 @@ room_node = write2pickle(image_array)
 for i in range(len(room_node)):
     print(room_node[i])
 
+print(image_array[50, :, 1])
 
 plt.subplot(1, 5, 1)
 plt.imshow(image_array, cmap="Greys")
