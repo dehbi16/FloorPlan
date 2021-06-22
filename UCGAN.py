@@ -6,7 +6,21 @@ import utils
 import os
 from tensorflow import keras
 from keras import layers
-from tensorflow.keras.layers.experimental.preprocessing import CenterCrop
+from numpy import expand_dims
+from numpy import zeros
+from numpy import ones
+from numpy.random import randn
+from numpy.random import randint
+from keras.datasets.fashion_mnist import load_data
+from keras.optimizers import Adam
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Reshape
+from keras.layers import Flatten
+from keras.layers import Conv2D
+from keras.layers import Conv2DTranspose
+from keras.layers import LeakyReLU
+from keras.layers import Dropout
 
 
 def write2pickle(train_dir):
@@ -78,68 +92,69 @@ def load_data(train_dir):
 
 
 def define_discriminator(in_shape=(256, 256, 4)):
-    model = keras.Sequential()
-    model.add(layers.Input(shape=in_shape))
+    model = Sequential()
+    # model.add(Input(shape=in_shape))
     # model.add(CenterCrop(height=256, width=256))
-    model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
 
-    model.add(layers.Flatten())
-    model.add(layers.Dropout(0.4))
-    model.add(layers.Dense(1, activation="sigmoid"))
+    model.add(Flatten())
+    model.add(Dropout(0.4))
+    model.add(Dense(1, activation="sigmoid"))
 
-    opt = keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+    opt = Adam(learning_rate=0.0002, beta_1=0.5)
     model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
     return model
 
 
 def define_generator(latent_dim):
-    model = keras.Sequential()
+    model = Sequential()
     n_node = 128 * 8 * 8
-    model.add(layers.Dense(n_node, input_dim=latent_dim))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Reshape((8, 8, 128)))
-    model.add(layers.Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
-    model.add(layers.LeakyReLU(alpha=0.2))
-    model.add(layers.Conv2D(4, (7, 7), activation="tanh", padding="same"))
+    model.add(Dense(n_node, input_dim=latent_dim))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Reshape((8, 8, 128)))
+    model.add(Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2DTranspose(128, kernel_size=(4, 4), strides=(2, 2), padding="same"))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Conv2D(4, (7, 7), activation="tanh", padding="same"))
+
     return model
 
 
 def define_gan(generator, discriminator):
     discriminator.trainable = False
-    model = keras.Sequential()
+    model = Sequential()
     model.add(generator)
     model.add(discriminator)
-    opt = keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+    opt = Adam(learning_rate=0.0002, beta_1=0.5)
     model.compile(loss="binary_crossentropy", optimizer=opt)
     return model
 
 
 def generate_real_samples(dataset, n_samples):
-    ix = np.random.randint(0, dataset.shape[0], n_samples)
+    ix = randint(0, dataset.shape[0], n_samples)
     x = dataset[ix]
-    y = np.ones((n_samples, 1))
+    y = ones((n_samples, 1))
     return x, y
 
 
 def generate_latent_points(latent_dim, n_samples):
-    x_input = np.random.randn(latent_dim*n_samples)
+    x_input = randn(latent_dim*n_samples)
     x_input = x_input.reshape(n_samples, latent_dim)
     return x_input
 
@@ -147,7 +162,7 @@ def generate_latent_points(latent_dim, n_samples):
 def generate_fake_samples(generator, latent_dim, n_samples):
     x_input = generate_latent_points(latent_dim, n_samples)
     x = generator.predict(x_input)
-    y = np.zeros((n_samples, 1))
+    y = zeros((n_samples, 1))
     return x, y
 
 
@@ -207,8 +222,8 @@ if __name__ == "__main__":
     gan_model = define_gan(generator, discriminator)
 
     # load image data
-    # dataset = load_data("dataset/floorplan")
+    dataset = load_data("dataset/floorplan")
 
     print("*******************************************")
     # train model
-    # train(generator, discriminator, gan_model, dataset, latent_dim, epochs=500)
+    train(generator, discriminator, gan_model, dataset, latent_dim, epochs=500)

@@ -4,7 +4,25 @@ import numpy as np
 import utils
 import os
 from tensorflow import keras
-from keras import layers
+
+from numpy import expand_dims
+from numpy import zeros
+from numpy import ones
+from numpy.random import randn
+from numpy.random import randint
+from keras.datasets.fashion_mnist import load_data
+from keras.optimizers import Adam
+from keras.models import Model
+from keras.layers import Input
+from keras.layers import Dense
+from keras.layers import Reshape
+from keras.layers import Flatten
+from keras.layers import Conv2D
+from keras.layers import Conv2DTranspose
+from keras.layers import LeakyReLU
+from keras.layers import Dropout
+from keras.layers import Embedding
+from keras.layers import Concatenate
 
 
 def write2pickle(image_array):
@@ -67,59 +85,59 @@ def load_data(train_dir):
 
 
 def define_discriminator(in_shape=(256, 256, 4), nb_classes=13):
-    in_label = layers.Input(shape=(nb_classes,))
+    in_label = Input(shape=(nb_classes,))
     n_nodes = in_shape[0] * in_shape[1] * in_shape[2]
-    li = layers.Dense(n_nodes)(in_label)
-    li = layers.Reshape((in_shape[0], in_shape[1], in_shape[2]))(li)
-    in_image = layers.Input(shape=in_shape)
-    merge = layers.Concatenate()([in_image, li])
+    li = Dense(n_nodes)(in_label)
+    li = Reshape((in_shape[0], in_shape[1], in_shape[2]))(li)
+    in_image = Input(shape=in_shape)
+    merge = Concatenate()([in_image, li])
 
-    fe = layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same")(merge)
-    fe = layers.LeakyReLU(alpha=0.2)(fe)
-    fe = layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
-    fe = layers.LeakyReLU(alpha=0.2)(fe)
-    fe = layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
-    fe = layers.LeakyReLU(alpha=0.2)(fe)
-    fe = layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
-    fe = layers.LeakyReLU(alpha=0.2)(fe)
-    fe = layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
-    fe = layers.LeakyReLU(alpha=0.2)(fe)
-    fe = layers.Flatten()(fe)
-    fe = layers.Dropout(0.4)(fe)
+    fe = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(merge)
+    fe = LeakyReLU(alpha=0.2)(fe)
+    fe = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
+    fe = LeakyReLU(alpha=0.2)(fe)
+    fe = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
+    fe = LeakyReLU(alpha=0.2)(fe)
+    fe = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
+    fe = LeakyReLU(alpha=0.2)(fe)
+    fe = Conv2D(128, (3, 3), strides=(2, 2), padding="same")(fe)
+    fe = LeakyReLU(alpha=0.2)(fe)
+    fe = Flatten()(fe)
+    fe = Dropout(0.4)(fe)
 
-    output = layers.Dense(1, activation="sigmoid")(fe)
+    output = Dense(1, activation="sigmoid")(fe)
 
-    model = keras.Model([in_image, in_label], output)
-    opt = keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+    model = Model([in_image, in_label], output)
+    opt = Adam(learning_rate=0.0002, beta_1=0.5)
     model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
     return model
 
 
 def define_generator(latent_dim, nb_classes=13):
-    in_label = layers.Input(shape=(nb_classes, ))
+    in_label = Input(shape=(nb_classes, ))
     n_nodes = 8 * 8 * 4
-    li = layers.Dense(n_nodes)(in_label)
-    li = layers.Reshape((8, 8, 4))(li)
+    li = Dense(n_nodes)(in_label)
+    li = Reshape((8, 8, 4))(li)
 
-    in_lat = layers.Input(shape=(latent_dim, ))
+    in_lat = Input(shape=(latent_dim, ))
     n_nodes = 128*8*8
-    gen = layers.Dense(n_nodes)(in_lat)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    gen = layers.Reshape((8,8,128))(gen)
+    gen = Dense(n_nodes)(in_lat)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    gen = Reshape((8,8,128))(gen)
 
-    merge = layers.Concatenate()([gen, li])
-    gen = layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(merge)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    gen = layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    gen = layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    gen = layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    gen = layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
-    gen = layers.LeakyReLU(alpha=0.2)(gen)
-    output = layers.Conv2D(4, (7, 7), activation="tanh", padding="same")(gen)
-    model = keras.Model([in_lat, in_label], output)
+    merge = Concatenate()([gen, li])
+    gen = Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(merge)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    gen = Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    gen = Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    gen = Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    gen = Conv2DTranspose(128, (4, 4), strides=(2, 2), padding="same")(gen)
+    gen = LeakyReLU(alpha=0.2)(gen)
+    output = Conv2D(4, (7, 7), activation="tanh", padding="same")(gen)
+    model = Model([in_lat, in_label], output)
     return model
 
 
@@ -130,31 +148,31 @@ def define_gan(g_model, d_model):
 
     gan_output = d_model([gen_output, gen_label])
 
-    model = keras.Model([gen_noise, gen_label], gan_output)
-    opt = keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+    model = Model([gen_noise, gen_label], gan_output)
+    opt = Adam(learning_rate=0.0002, beta_1=0.5)
     model.compile(loss="binary_crossentropy", optimizer=opt)
     return model
 
 
 def generate_real_samples(dataset, n_samples):
     images, labels = dataset
-    ix = np.random.randint(0, images.shape[0], n_samples)
+    ix = randint(0, images.shape[0], n_samples)
     x, label = images[ix], labels[ix]
-    y = np.ones((n_samples, 1))
+    y = ones((n_samples, 1))
     return [x, label], y
 
 
 def generate_latent_points(latent_dim, n_samples, nb_classes=13):
-    x_input = np.random.randn(latent_dim * n_samples)
+    x_input = randn(latent_dim * n_samples)
     x_input = x_input.reshape(n_samples, latent_dim)
-    labels = np.random.randint(0, nb_classes, size=(n_samples, nb_classes))
+    labels = randint(0, nb_classes, size=(n_samples, nb_classes))
     return [x_input, labels]
 
 
 def generate_fake_samples(generator, latent_dim, n_samples):
     x_input, labels = generate_latent_points(latent_dim, n_samples)
     x = generator.predict([x_input, labels])
-    y = np.zeros((n_samples, 1))
+    y = zeros((n_samples, 1))
     return [x, labels], y
 
 
