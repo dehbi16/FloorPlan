@@ -1,3 +1,5 @@
+from datetime import date
+
 from numpy.random import randn
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -18,6 +20,7 @@ from keras.models import Input, Model
 from keras.layers import Concatenate, Conv2D, LeakyReLU, BatchNormalization, Activation, Conv2DTranspose, Dropout
 from keras.optimizers import Adam
 from keras.initializers import RandomNormal
+from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 
 
 def load_images(path, size=(256, 256)):
@@ -26,9 +29,8 @@ def load_images(path, size=(256, 256)):
         print(filename)
         with Image.open(path+filename) as temp:
             image_array = np.asarray(temp, dtype=np.uint8)
-        # pixels = keras.preprocessing.image.load_img(path+filename)
-        # image = keras.preprocessing.image.img_to_array(pixels)
         blk_img, map_img = np.reshape(image_array[:, :, 3], (256, 256, 1)), np.reshape(image_array[:, :, 1], (256, 256, 1))
+
         black_list.append(blk_img)
         tar_list.append(map_img)
     return [np.asarray(black_list), np.asarray(tar_list)]
@@ -177,8 +179,9 @@ def load_real_samples(filename):
     # unpack arrays
     X1, X2 = data['arr_0'], data['arr_1']
     # scale from [0,255] to [-1,1]
-    # X1 = (X1 - 127.5) / 127.5
-    # X2 = (X2 - 127.5) / 127.5
+    for i in range(len(X1)):
+        X1[i] = (X1[i] - 127.5) / 127.5
+        X2[i] = (X2[i] - 6.5) / 6.5
     return [X1, X2]
 
 
@@ -218,17 +221,17 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
     for i in range(n_samples):
         plt.subplot(3, n_samples, 1 + i)
         plt.axis('off')
-        plt.imshow(X_realA[i])
+        plt.imshow(X_realA[i], cmap='Greys')
     # plot generated target image
     for i in range(n_samples):
         plt.subplot(3, n_samples, 1 + n_samples + i)
         plt.axis('off')
-        plt.imshow(X_fakeB[i])
+        plt.imshow(X_fakeB[i], cmap='Greys')
     # plot real target image
     for i in range(n_samples):
         plt.subplot(3, n_samples, 1 + n_samples * 2 + i)
         plt.axis('off')
-        plt.imshow(X_realB[i])
+        plt.imshow(X_realB[i], cmap='Greys')
     # save plot to file
     filename1 = 'plot_%06d.png' % (step + 1)
     plt.savefig(filename1)
@@ -265,6 +268,7 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
         print('>%d/%d, d1=[%.3f] d2=[%.3f] g=[%.3f]' % (i + 1, n_steps, d_loss1, d_loss2, g_loss))
         # summarize model performance
         if (i + 1) % (bat_per_epo * 10) == 0:
+        # if (i + 1) % 100 == 0:
             summarize_performance(i, g_model, dataset)
 
 
@@ -288,16 +292,26 @@ if __name__ == "__main__":
     print('Saved dataset: ', filename)
     """
     dataset = load_real_samples("floor_plan.npz")
+    """plt.subplot(1, 2, 1)
+    plt.axis('off')
+    # plot raw pixel data
+    dataset[0][0] = (dataset[0][0]+1)/2.0
+    dataset[1][0] = (dataset[1][0]+1)/2.0
+    plt.imshow(dataset[0][0], cmap="Greys")
+    plt.subplot(1, 2, 2)
+    plt.axis('off')
+    # plot raw pixel data
+    plt.imshow(dataset[1][0], cmap="Greys")
+    plt.show()"""
+
     print('Loaded', dataset[0].shape, dataset[1].shape)
     # define input shape based on the loaded dataset
     image_shape = dataset[0].shape[1:]
-
     # define the models
     d_model = define_discriminator(image_shape)
     g_model = define_generator(image_shape)
     # define the composite model
     gan_model = define_gan(g_model, d_model, image_shape)
-    print(gan_model.summary())
     # train model
-    train(d_model, g_model, gan_model, dataset, n_epochs=1)
+    train(d_model, g_model, gan_model, dataset, n_epochs=10)
 
