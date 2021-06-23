@@ -29,7 +29,7 @@ def load_images(path, size=(256, 256)):
         print(filename)
         with Image.open(path+filename) as temp:
             image_array = np.asarray(temp, dtype=np.uint8)
-        blk_img, map_img = np.reshape(image_array[:, :, 3], (256, 256, 1)), np.reshape(image_array[:, :, 1], (256, 256, 1))
+        blk_img, map_img = np.reshape(image_array[:, :, 3], (256, 256, 1)), np.reshape(image_array[:, :, 2], (256, 256, 1))
 
         black_list.append(blk_img)
         tar_list.append(map_img)
@@ -181,7 +181,7 @@ def load_real_samples(filename):
     # scale from [0,255] to [-1,1]
     for i in range(len(X1)):
         X1[i] = (X1[i] - 127.5) / 127.5
-        X2[i] = (X2[i] - 6.5) / 6.5
+        # X2[i] = (X2[i] - 6.5) / 6.5
     return [X1, X2]
 
 
@@ -215,8 +215,8 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
     X_fakeB, _ = generate_fake_samples(g_model, X_realA, 1)
     # scale all pixels from [-1,1] to [0,1]
     X_realA = (X_realA + 1) / 2.0
-    X_realB = (X_realB + 1) / 2.0
-    X_fakeB = (X_fakeB + 1) / 2.0
+    # X_realB = (X_realB + 1) / 2.0
+    # X_fakeB = (X_fakeB + 1) / 2.0
     # plot real source images
     for i in range(n_samples):
         plt.subplot(3, n_samples, 1 + i)
@@ -268,7 +268,6 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
         print('>%d/%d, d1=[%.3f] d2=[%.3f] g=[%.3f]' % (i + 1, n_steps, d_loss1, d_loss2, g_loss))
         # summarize model performance
         if (i + 1) % (bat_per_epo * 10) == 0:
-        # if (i + 1) % 100 == 0:
             summarize_performance(i, g_model, dataset)
 
 
@@ -276,14 +275,6 @@ if __name__ == "__main__":
     """
     path = "dataset/floorplan/"
     # load dataset
-    [src_images, tar_images] = load_images(path)
-    print('Loaded: ', src_images.shape, tar_images.shape)
-    # save as compressed numpy array
-    filename = 'floor_plan.npz'
-    savez_compressed(filename, src_images, tar_images)
-    print('Saved dataset: ', filename)
-    
-    path = "dataset/floorplan/"
     [black_images, tar_images] = load_images(path)
     print('Loaded: ', black_images.shape, tar_images.shape)
     # save as compressed numpy array
@@ -291,19 +282,21 @@ if __name__ == "__main__":
     savez_compressed(filename, black_images, tar_images)
     print('Saved dataset: ', filename)
     """
+
     dataset = load_real_samples("floor_plan.npz")
-    """plt.subplot(1, 2, 1)
+    """
+    plt.subplot(1, 2, 1)
     plt.axis('off')
     # plot raw pixel data
     dataset[0][0] = (dataset[0][0]+1)/2.0
-    dataset[1][0] = (dataset[1][0]+1)/2.0
+    # dataset[1][0] = (dataset[1][0]+1)/2.0
     plt.imshow(dataset[0][0], cmap="Greys")
     plt.subplot(1, 2, 2)
     plt.axis('off')
     # plot raw pixel data
     plt.imshow(dataset[1][0], cmap="Greys")
-    plt.show()"""
-
+    plt.show()
+    """
     print('Loaded', dataset[0].shape, dataset[1].shape)
     # define input shape based on the loaded dataset
     image_shape = dataset[0].shape[1:]
@@ -313,5 +306,5 @@ if __name__ == "__main__":
     # define the composite model
     gan_model = define_gan(g_model, d_model, image_shape)
     # train model
-    train(d_model, g_model, gan_model, dataset, n_epochs=10)
+    train(d_model, g_model, gan_model, dataset, n_epochs=30)
 
