@@ -1,1 +1,1 @@
-'Run UCGAN.py' 
+'Run Pix2Pix.py' 
